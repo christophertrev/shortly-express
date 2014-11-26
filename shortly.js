@@ -2,6 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var expressSession = require('express-session');
 
 
 var db = require('./app/config');
@@ -16,6 +18,16 @@ var app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
+
+app.use(cookieParser());
+app.use(expressSession({
+  key: "mysite.sid.uid.whatever",
+  secret: 'secret',
+  cookie: {
+    maxAge: 2678400000 // 31 days
+  },
+}));
+
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
 // Parse forms (signup/login)
@@ -23,24 +35,30 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+app.get('/', createUser,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', createUser,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links', createUser,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
+    console.log(links.models);
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.get('/signup' ,
+function(req, res) {
+  res.render('signup');
+});
+
+app.post('/links', createUser,
 function(req, res) {
   var uri = req.body.url;
 
@@ -77,6 +95,50 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+function createUser(req, res, next) {
+  console.log('req.session:', req.session)
+  if (req.session.user) {
+    console.log('Access granted');
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    console.log('Access denied!');
+    res.render('login');
+  }
+}
+
+app.post('/login', function (req, res, next){
+  console.log('req.body', req.body)
+  var username = req.body.username;
+  var password = req.body.password;
+
+  if(username === 'demo' && password === 'demo'){
+    req.session.regenerate(function(){
+      req.session.user = username;
+      res.redirect('/');
+    });
+  }
+  else {
+    res.render('login');
+  }
+});
+
+app.post('/signup', function (req, res, next){
+  console.log('req.body', req.body)
+  var username = req.body.username;
+  var password = req.body.password;
+
+  if(username === 'demo' && password === 'demo'){
+    req.session.regenerate(function(){
+      req.session.user = username;
+      res.redirect('/');
+    });
+  }
+  else {
+    res.render('signup');
+  }
+});
+
 
 
 
