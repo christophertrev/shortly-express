@@ -124,19 +124,57 @@ app.post('/login', function (req, res, next){
 });
 
 app.post('/signup', function (req, res, next){
-  console.log('req.body', req.body)
+  console.log('req.body', req.body);
   var username = req.body.username;
   var password = req.body.password;
+  console.log(' in post');
+  var newUser = new User({
+    username: username,
+    password: password
+  });
+  console.log('u',newUser.get('username'))
+  console.log('p',newUser.get('password'))
+  setTimeout(newUser.save, 1000);
 
-  if(username === 'demo' && password === 'demo'){
-    req.session.regenerate(function(){
-      req.session.user = username;
-      res.redirect('/');
-    });
-  }
-  else {
-    res.render('signup');
-  }
+  // new User({ username: username }).fetch().then(function(found) {
+  //   if (found) {
+  //     res.send(200, found.attributes);
+  //   } else {
+  //     //need to add it
+  //       var user = new User({
+  //         username:
+  //       });
+
+  //     util.getUrlTitle(uri, function(err, title) {
+  //       if (err) {
+  //         console.log('Error reading URL heading: ', err);
+  //         return res.send(404);
+  //       }
+
+  //       var link = new Link({
+  //         url: uri,
+  //         title: title,
+  //         base_url: req.headers.origin
+  //       });
+
+  //       link.save().then(function(newLink) {
+  //         Links.add(newLink);
+  //         res.send(200, newLink);
+  //       });
+  //     });
+  //   }
+  // });
+
+
+  // if(username === 'demo' && password === 'demo'){
+  //   req.session.regenerate(function(){
+  //     req.session.user = username;
+  //     res.redirect('/');
+  //   });
+  // }
+  // else {
+  //   res.render('signup');
+  // }
 });
 
 
