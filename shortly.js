@@ -35,17 +35,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', createUser,
+app.get('/', checkUser,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', createUser,
+app.get('/create', checkUser,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', createUser,
+app.get('/links', checkUser,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     console.log(links.models);
@@ -53,12 +53,18 @@ function(req, res) {
   });
 });
 
+app.get('/logout',
+function(req, res) {
+  req.session.destroy();
+  res.render('login');
+});
+
 app.get('/signup' ,
 function(req, res) {
   res.render('signup');
 });
 
-app.post('/links', createUser,
+app.post('/links', checkUser,
 function(req, res) {
   var uri = req.body.url;
 
@@ -95,93 +101,66 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-function createUser(req, res, next) {
-  console.log('req.session:', req.session)
+function checkUser(req, res, next) {
   if (req.session.user) {
-    console.log('Access granted');
     next();
   } else {
     req.session.error = 'Access denied!';
-    console.log('Access denied!');
     res.render('login');
   }
 }
 
-app.post('/login', function (req, res, next){
-  console.log('req.body', req.body)
-  var username = req.body.username;
-  var password = req.body.password;
+// app.post('/login', function (req, res, next){
+//   console.log('req.body', req.body)
+//   var username = req.body.username;
+//   var password = req.body.password;
 
-  if(username === 'demo' && password === 'demo'){
-    req.session.regenerate(function(){
-      req.session.user = username;
-      res.redirect('/');
-    });
-  }
-  else {
-    res.render('login');
-  }
-});
+//   if(username === 'demo' && password === 'demo'){
+//     req.session.regenerate(function(){
+//       req.session.user = username;
+//       res.redirect('/');
+//     });
+//   }
+//   else {
+//     res.render('login');
+//   }
+// });
 
 app.post('/signup', function (req, res, next){
-  console.log('req.body', req.body);
   var username = req.body.username;
   var password = req.body.password;
-  console.log(' in post');
   var newUser = new User({
     username: username,
     password: password
   });
-  // console.log('u',newUser.get('username'))
-  // console.log('p',newUser.get('password'))
   newUser.save().then(function(savedUser){
    req.session.regenerate(function(){
       req.session.user = savedUser;
       res.redirect('/');
     });
   })
-
-  // new User({ username: username }).fetch().then(function(found) {
-  //   if (found) {
-  //     res.send(200, found.attributes);
-  //   } else {
-  //     //need to add it
-  //       var user = new User({
-  //         username:
-  //       });
-
-  //     util.getUrlTitle(uri, function(err, title) {
-  //       if (err) {
-  //         console.log('Error reading URL heading: ', err);
-  //         return res.send(404);
-  //       }
-
-  //       var link = new Link({
-  //         url: uri,
-  //         title: title,
-  //         base_url: req.headers.origin
-  //       });
-
-  //       link.save().then(function(newLink) {
-  //         Links.add(newLink);
-  //         res.send(200, newLink);
-  //       });
-  //     });
-  //   }
-  // });
-
-
-  // if(username === 'demo' && password === 'demo'){
-  //   req.session.regenerate(function(){
-  //     req.session.user = username;
-  //     res.redirect('/');
-  //   });
-  // }
-  // else {
-  //   res.render('signup');
-  // }
 });
 
+app.post('/login', function (req, res, next){
+  var username = req.body.username;
+  var password = req.body.password;
+  new User({username: username}).fetch().then(function(user){
+    if(!user){
+      res.render('login');
+    } else {
+      user.comparePassword(password, function(correct){
+        if (correct){
+          req.session.regenerate(function(){
+             req.session.user = user;
+             res.redirect('/');
+           });
+        } else {
+          res.render('login');
+        }
+      })
+    }
+  })
+});
 
 
 
