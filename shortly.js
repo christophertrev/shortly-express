@@ -132,9 +132,14 @@ app.post('/signup', function (req, res, next){
     username: username,
     password: password
   });
-  console.log('u',newUser.get('username'))
-  console.log('p',newUser.get('password'))
-  setTimeout(newUser.save, 1000);
+  // console.log('u',newUser.get('username'))
+  // console.log('p',newUser.get('password'))
+  newUser.save().then(function(savedUser){
+   req.session.regenerate(function(){
+      req.session.user = savedUser;
+      res.redirect('/');
+    });
+  })
 
   // new User({ username: username }).fetch().then(function(found) {
   //   if (found) {
